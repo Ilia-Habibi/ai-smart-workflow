@@ -1,0 +1,120 @@
+# Workflow Configuration
+# Customize these settings to match your project preferences
+
+# General settings
+workflow:
+  # Default workflow mode when intent is ambiguous
+  # Options: full_build, enhance, modify, test_only, validate_only, document_only
+  default_mode: enhance
+  
+  # Whether to ask for user confirmation before each phase
+  confirm_before_phase: false
+  
+  # Whether to ask for confirmation before making code changes
+  confirm_before_changes: true
+
+# Project analysis settings
+analysis:
+  # File patterns to exclude from analysis
+  exclude_patterns:
+    - "__pycache__"
+    - ".git"
+    - ".venv"
+    - "venv"
+    - "node_modules"
+    - ".egg-info"
+    - "*.pyc"
+  
+  # Maximum file size to analyze (in KB)
+  max_file_size_kb: 500
+
+# Validation settings
+validation:
+  # Linter tool to use
+  linter: ruff
+  
+  # Type checker to use  
+  type_checker: mypy
+  
+  # Security scanner to use
+  security_scanner: bandit
+  
+  # Ruff rule sets to enable
+  ruff_rules:
+    - "E"    # pycodestyle errors
+    - "W"    # pycodestyle warnings
+    - "F"    # pyflakes
+    - "I"    # isort
+    - "N"    # pep8-naming
+    - "UP"   # pyupgrade
+    - "B"    # flake8-bugbear
+    - "SIM"  # flake8-simplify
+    - "S"    # flake8-bandit (security)
+  
+  # Whether to auto-fix issues when possible
+  auto_fix: true
+  
+  # Maximum line length
+  line_length: 100
+
+# Testing settings
+testing:
+  # Test framework
+  framework: pytest
+  
+  # Minimum acceptable coverage percentage
+  min_coverage: 70
+  
+  # Test naming convention
+  # Options: test_function_name, test_descriptive, test_given_when_then
+  naming_convention: test_descriptive
+  
+  # Whether to generate integration tests
+  generate_integration_tests: true
+  
+  # Whether to generate edge case tests
+  generate_edge_case_tests: true
+  
+  # Mock strategy for external dependencies
+  # Options: always_mock, selective_mock, minimal_mock
+  mock_strategy: always_mock
+  
+  # Directories/modules to exclude from test generation
+  exclude_from_testing: []
+
+# Documentation settings
+documentation:
+  # Docstring style
+  # Options: google, numpy, sphinx
+  docstring_style: google
+  
+  # Whether to generate README if missing
+  generate_readme: true
+  
+  # Whether to generate CONTRIBUTING.md
+  generate_contributing: true
+  
+  # Whether to generate CHANGELOG.md  
+  generate_changelog: true
+  
+  # Whether to generate architecture diagrams
+  generate_architecture_diagram: true
+  
+  # README badge providers
+  badges:
+    - python_version
+    - license
+
+
+
+# Output settings
+output:
+  # Where to save reports
+  reports_dir: ".workflow-reports"
+  
+  # Report format
+  # Options: markdown, json, both
+  report_format: markdown
+  
+  # Whether to show before/after comparisons
+  show_diff: true

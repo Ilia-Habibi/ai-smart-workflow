@@ -1,0 +1,23 @@
+# Ruff default configuration for validate-code skill
+
+target-version = "py310"
+line-length = 100
+
+[lint]
+# Enable Pyflakes (`F`), pycodestyle (`E`, `W`), isort (`I`), pep8-naming (`N`),
+# flake8-bugbear (`B`), and flake8-simplify (`SIM`).
+select = ["F", "E", "W", "I", "N", "B", "SIM"]
+ignore = []
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
