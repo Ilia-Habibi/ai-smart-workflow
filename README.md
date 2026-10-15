@@ -155,35 +155,45 @@ The `demo/` directory contains a real-world before/after example using [Playlist
 - 🟡 Basic README and docstrings
 
 ### After (Enhanced by AI Smart Workflow)
-- ✅ Comprehensive pytest suite with nearly 30 tests
-- ✅ Full type annotations
-- ✅ Ruff + MyPy configured and passing
-- ✅ Professional README with badges
-- ✅ Google-style docstrings on all public functions
-- ✅ Architecture diagram
+- ✅ Comprehensive pytest suite (31 unit tests, 92% coverage, 100% passing)
+- ✅ Full type annotations (MyPy passing with 0 errors)
+- ✅ Ruff configured and passing (0 lint errors)
+- ✅ Professional README with architecture diagrams
+- ✅ Google-style docstrings on public functions
+- ✅ Fully mocked unit tests guaranteeing complete test isolation
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ Configuration & Override Protocol
 
-Customize the workflow by editing [`configs/workflow_config.yaml`](configs/workflow_config.yaml):
+The workflow can be customized per project using YAML configuration, evaluated through a **3-tier precedence hierarchy**:
+
+```
+[1. User Prompt Directives]  --> Highest priority (e.g. "aim for 85% coverage")
+          ↓
+[2. Project Config File]    --> `.workflow-config.yaml` or `configs/workflow_config.yaml`
+          ↓
+[3. Built-in Skill Defaults] --> Fallback parameters defined in skills
+```
+
+Customize the workflow by copying and editing [`configs/workflow_config.yaml`](configs/workflow_config.yaml):
 
 ```yaml
 testing:
   min_coverage: 70              # Minimum test coverage %
-  mock_strategy: always_mock    # How to handle external deps
+  mock_strategy: always_mock    # Strict unit test isolation
   
 validation:
   linter: ruff                  # Linting tool
   auto_fix: true                # Auto-fix issues
-  line_length: 100              # Max line length
+  line_length: 120              # Max line length
 
 documentation:
   docstring_style: google       # Docstring format
   generate_readme: true         # Auto-generate README
 ```
 
-> See [Customization Guide](docs/customization.md) for all options.
+> For full configuration details and runtime override examples, see the [Customization Guide](docs/customization.md).
 
 ---
 

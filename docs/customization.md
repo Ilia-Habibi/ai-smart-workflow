@@ -6,9 +6,47 @@ The AI Smart Workflow is designed to be highly customizable. You can adjust beha
 
 ---
 
-## Configuration File
+## Configuration Loading & Overrides Protocol
 
-The primary configuration is in [`configs/workflow_config.yaml`](../configs/workflow_config.yaml).
+The workflow follows a predictable **3-tier precedence hierarchy** to determine runtime parameters:
+
+```mermaid
+graph TD
+    A["Tier 1: User Prompt Directives<br/>(Highest Priority - runtime override)"] --> D["Resolved Configuration"]
+    B["Tier 2: Project Config File<br/>(.workflow-config.yaml or configs/workflow_config.yaml)"] --> D
+    C["Tier 3: Built-in Skill Defaults<br/>(Fallback in SKILL.md)"] --> D
+```
+
+### 1. Precedence Hierarchy
+
+1. **Tier 1 — Explicit User Prompt (Highest Priority):**
+   Any directive provided in the user's natural language prompt takes immediate precedence over files and defaults.
+   - *Example prompt:* `"Run the workflow on this project, but aim for 85% coverage and skip bandit security scans."`
+   - *Result:* Overrides `testing.min_coverage` to `85` and disables `validation.security_scanner`, while retaining all other settings from the configuration file.
+
+2. **Tier 2 — Project Configuration File (Second Priority):**
+   When the orchestrator starts, it automatically searches for:
+   - `.workflow-config.yaml` in the target project root
+   - `configs/workflow_config.yaml`
+   If found, the AI agent parses the YAML structure and propagates parameters across all delegated skills.
+
+3. **Tier 3 — Built-in Defaults (Fallback):**
+   If no configuration file exists and no prompt overrides are given, the workflow safely falls back to standard production defaults:
+   - `validation.linter`: `ruff` (with auto-fix enabled)
+   - `validation.type_checker`: `mypy`
+   - `testing.min_coverage`: `70%`
+   - `testing.mock_strategy`: `always_mock` (strict unit test isolation)
+   - `documentation.docstring_style`: `google`
+
+---
+
+## Configuration File Reference
+
+The template configuration is located at [`configs/workflow_config.yaml`](../configs/workflow_config.yaml). To customize your project, copy it to your project root as `.workflow-config.yaml`:
+
+```bash
+cp configs/workflow_config.yaml .workflow-config.yaml
+```
 
 ### Key Settings
 

@@ -58,6 +58,8 @@ sequenceDiagram
     participant P as Project
     
     U->>O: Natural language prompt
+    O->>P: Discover config (.workflow-config.yaml / configs/workflow_config.yaml)
+    O->>O: Resolve configuration (Prompt Overrides > Config File > Defaults)
     O->>O: Detect intent & scope
     O->>U: Present execution plan
     U->>O: Approve / modify
