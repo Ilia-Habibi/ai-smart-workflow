@@ -8,11 +8,13 @@ Key Features:
 - Text grouping logic to combine fragmented lines into coherent track names.
 """
 
+import os
+from typing import Any, cast
+
 import cv2
 import numpy as np
-import os
 import pytesseract
-from typing import Tuple, List, Optional, Any, Dict
+
 
 class OCRHandler:
     """Handles OCR operations for image processing."""
@@ -29,7 +31,7 @@ class OCRHandler:
             print(f"Warning: Tesseract functionality might fail. File not found at: {tesseract_path}")
             print("Please ensure Tesseract-OCR is installed and the path is correct.")
 
-    def preprocess_image(self, image_path: str) -> Optional[np.ndarray]:
+    def preprocess_image(self, image_path: str) -> np.ndarray | None:
         """Preprocesses the image to improve OCR accuracy.
 
         Includes cropping, converting to grayscale, checking for dark mode, and thresholding.
@@ -50,7 +52,7 @@ class OCRHandler:
         bottom_crop = int(h - (w * 0.1))
         left_crop = int(w * 0.15)
         right_crop = int(w - (w * 0.15))
-        
+
         cropped_img = img[top_crop:bottom_crop, left_crop:right_crop]
 
         gray = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2GRAY)
@@ -59,15 +61,15 @@ class OCRHandler:
             gray = cv2.bitwise_not(gray)
 
         binary = cv2.adaptiveThreshold(
-            gray, 255, 
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-            cv2.THRESH_BINARY, 
+            gray, 255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY,
             31, 15
         )
 
         return binary
 
-    def extract_text_data(self, image_path: str) -> Dict[str, List[Any]]:
+    def extract_text_data(self, image_path: str) -> dict[str, list[Any]]:
         """Extracts detailed OCR data including line coordinates.
 
         Args:
@@ -81,9 +83,9 @@ class OCRHandler:
             return {}
 
         data = pytesseract.image_to_data(processed_img, output_type=pytesseract.Output.DICT)
-        return data
+        return cast(dict[str, list[Any]], data)
 
-    def extract_clean_tracks(self, image_path: str) -> Tuple[List[str], str]:
+    def extract_clean_tracks(self, image_path: str) -> tuple[list[str], str]:
         """Extracts text data and groups nearby lines into track details.
 
         Args:
@@ -97,11 +99,11 @@ class OCRHandler:
             return [], ""
 
         n_boxes = len(data['text'])
-        grouped_lines: List[str] = []
-        current_group: List[str] = []
+        grouped_lines: list[str] = []
+        current_group: list[str] = []
         last_top = 0
         last_height = 0
-        
+
         full_raw_text = ""
 
         for i in range(n_boxes):
@@ -113,8 +115,8 @@ class OCRHandler:
 
             top = data['top'][i]
             height = data['height'][i]
-            
-            if last_top == 0 or (top - last_top) < (last_height * 2.5): 
+
+            if last_top == 0 or (top - last_top) < (last_height * 2.5):
                 current_group.append(text)
             else:
                 if current_group:

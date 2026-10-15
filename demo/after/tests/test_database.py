@@ -1,10 +1,11 @@
-import pytest
-import sqlite3
 import os
 import sys
 
+import pytest
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from database import DatabaseHandler
+
 
 @pytest.fixture
 def db():
@@ -31,8 +32,8 @@ def test_add_image_log_duplicate(db):
     assert db.cursor.fetchone()[0] == 1
 
 def test_add_raw_track(db):
-    assert db.add_raw_track("song 1") == True
-    assert db.add_raw_track("song 1") == False # duplicate
+    assert db.add_raw_track("song 1")
+    assert not db.add_raw_track("song 1") # duplicate
 
 def test_get_pending_tracks(db):
     db.add_raw_track("song 1")
@@ -44,7 +45,7 @@ def test_get_pending_tracks(db):
 def test_update_track_info(db):
     db.add_raw_track("song 1")
     track_id = db.get_pending_tracks()[0][0]
-    
+
     info = {
         'title': 'Song 1',
         'artist': 'Artist 1',
@@ -53,8 +54,8 @@ def test_update_track_info(db):
         'cover_url': 'http://url',
         'duration': '3:00'
     }
-    
-    assert db.update_track_info(track_id, info) == True
+
+    assert db.update_track_info(track_id, info)
     db.cursor.execute("SELECT status, yt_id FROM tracks WHERE id=?", (track_id,))
     res = db.cursor.fetchone()
     assert res[0] == 'found'
@@ -67,17 +68,17 @@ def test_update_track_info_duplicate_yt_id(db):
     pending = db.get_pending_tracks()
     id1 = pending[0][0]
     id2 = pending[1][0]
-    
+
     info = {
         'title': 'Song 1', 'artist': 'Artist 1', 'album': 'Album 1',
         'yt_id': 'xyz123', 'cover_url': 'http://url', 'duration': '3:00'
     }
-    
+
     db.update_track_info(id1, info)
-    
+
     # Try to update second track with same yt_id
-    assert db.update_track_info(id2, info) == False # Should delete duplicate
-    
+    assert not db.update_track_info(id2, info) # Should delete duplicate
+
     db.cursor.execute("SELECT count(*) FROM tracks WHERE id=?", (id2,))
     assert db.cursor.fetchone()[0] == 0 # Was deleted
 
@@ -91,13 +92,13 @@ def test_mark_track_not_found(db):
 def test_get_tracks_to_download(db):
     db.add_raw_track("song 1")
     track_id = db.get_pending_tracks()[0][0]
-    
+
     info = {
         'title': 'Song 1', 'artist': 'Artist 1', 'album': 'Album 1',
         'yt_id': 'xyz123', 'cover_url': 'http://url', 'duration': '3:00'
     }
     db.update_track_info(track_id, info)
-    
+
     to_download = db.get_tracks_to_download()
     assert len(to_download) == 1
     assert to_download[0][1] == 'Song 1'
@@ -111,5 +112,5 @@ def test_mark_track_downloaded(db):
 
 def test_is_image_processed(db):
     db.add_image_log("test.jpg", "raw text")
-    assert db.is_image_processed("test.jpg") == True
-    assert db.is_image_processed("unknown.jpg") == False
+    assert db.is_image_processed("test.jpg")
+    assert not db.is_image_processed("unknown.jpg")

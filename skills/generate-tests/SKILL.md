@@ -309,6 +309,14 @@ def test_music_search(mock_ytmusic_class):
     assert result["title"] == "Test Song"
 ```
 
+##### Strict Test Isolation & API Payload Rules (CRITICAL)
+1. **Total Isolation for Unit Tests:**
+   - Any test targeting a function or orchestration entry point (e.g. `main()`) MUST mock all external services instantiated within that scope (`DatabaseHandler`, `MusicFinder`, `Downloader`, `OCRHandler`, etc.).
+   - Unit tests must NEVER leak into live network requests, host file system modifications, external binaries (`tesseract`, `ffmpeg`), or unmocked package internal files (`locales`, `gettext`).
+2. **API Payload Completeness:**
+   - When mocking return values across module boundaries (e.g., API search results or database records), verify the downstream consumer contracts.
+   - Do NOT return partial objects (e.g. only `{title, artist}`). Always supply all fields expected by consumers (such as `yt_id`, `cover_url`, `duration`, `status`, etc.) to prevent latent `KeyError` or schema bugs.
+
 #### 4.3 Naming Convention
 Use descriptive test names that explain WHAT is being tested:
 ```python
@@ -349,10 +357,11 @@ When tests fail:
 3. **Check if it's a code issue** (actual bug found) → report to user, optionally fix
 4. **Check if it's an environment issue** (missing dependency) → install and retry
 
-#### 5.3 Iterate
-- Fix failing tests one at a time
-- Re-run after each fix to verify
-- Maximum 3 iterations per failing test before flagging for human review
+#### 5.3 Iterate & Verify Gate (MANDATORY)
+- Fix failing tests one at a time.
+- Re-run after each fix to verify.
+- **Verification Gate:** The agent MUST re-run `pytest tests/` and achieve a **Zero Exit Code (0 failures)** before concluding this phase. Never declare test generation complete if any test is failing.
+- Maximum 3 iterations per failing test before escalating to human review if an underlying architectural issue is identified.
 
 ---
 

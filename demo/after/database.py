@@ -8,11 +8,12 @@ Responsibilities:
 """
 
 import sqlite3
-from typing import List, Tuple, Dict, Any, Optional
+from typing import Any
+
 
 class DatabaseHandler:
     """Handles SQLite database connections and queries.
-    
+
     Attributes:
         conn (sqlite3.Connection): SQLite connection object.
         cursor (sqlite3.Cursor): Database cursor for executing queries.
@@ -30,7 +31,7 @@ class DatabaseHandler:
 
     def create_table(self) -> None:
         """Creates the necessary database tables.
-        
+
         Creates 'tracks' table for storing song metadata and 'images_log'
         for tracking processed images.
         """
@@ -47,7 +48,7 @@ class DatabaseHandler:
                 status TEXT DEFAULT 'pending'
             )
         """)
-        
+
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS images_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -90,7 +91,7 @@ class DatabaseHandler:
         except sqlite3.IntegrityError:
             return False
 
-    def get_pending_tracks(self) -> List[Tuple[int, str]]:
+    def get_pending_tracks(self) -> list[tuple[int, str]]:
         """Retrieves a list of tracks that have not been searched yet.
 
         Returns:
@@ -99,7 +100,7 @@ class DatabaseHandler:
         self.cursor.execute("SELECT id, raw_text FROM tracks WHERE status = 'pending'")
         return self.cursor.fetchall()
 
-    def update_track_info(self, track_id: int, info: Dict[str, Any]) -> bool:
+    def update_track_info(self, track_id: int, info: dict[str, Any]) -> bool:
         """Updates track information after finding it in the API.
 
         Also checks for duplicate tracks (duplicate yt_id).
@@ -112,7 +113,10 @@ class DatabaseHandler:
         Returns:
             bool: True if updated, False if deleted as duplicate.
         """
-        yt_id = info['yt_id']
+        yt_id = info.get('yt_id')
+        if not yt_id:
+            print(f"Missing valid yt_id for track ID {track_id}")
+            return False
 
         self.cursor.execute("SELECT id FROM tracks WHERE yt_id = ? AND id != ?", (yt_id, track_id))
         duplicate = self.cursor.fetchone()
@@ -122,28 +126,28 @@ class DatabaseHandler:
             self.cursor.execute("DELETE FROM tracks WHERE id = ?", (track_id,))
             self.conn.commit()
             return False
-        
+
         self.cursor.execute("""
-            UPDATE tracks 
-            SET song_name = ?, 
-                artist_name = ?, 
-                album = ?, 
-                yt_id = ?, 
-                cover_url = ?, 
-                duration = ?, 
+            UPDATE tracks
+            SET song_name = ?,
+                artist_name = ?,
+                album = ?,
+                yt_id = ?,
+                cover_url = ?,
+                duration = ?,
                 status = 'found'
             WHERE id = ?
         """, (
-            info['title'], 
-            info['artist'], 
-            info['album'], 
-            yt_id, 
-            info['cover_url'], 
-            info['duration'], 
+            info.get('title', ''),
+            info.get('artist', ''),
+            info.get('album', 'Single'),
+            yt_id,
+            info.get('cover_url', ''),
+            info.get('duration', ''),
             track_id
         ))
         self.conn.commit()
-        print(f"Updated track {track_id}: {info['title']} - {yt_id}")
+        print(f"Updated track {track_id}: {info.get('title', '')} - {yt_id}")
         return True
 
     def mark_track_not_found(self, track_id: int) -> None:
@@ -155,15 +159,15 @@ class DatabaseHandler:
         self.cursor.execute("UPDATE tracks SET status = 'not_found' WHERE id = ?", (track_id,))
         self.conn.commit()
 
-    def get_tracks_to_download(self) -> List[Tuple[int, str, str, str, str, str]]:
+    def get_tracks_to_download(self) -> list[tuple[int, str, str, str, str, str]]:
         """Retrieves a list of tracks ready for download.
 
         Returns:
             List[Tuple[int, str, str, str, str, str]]: A list of track information tuples.
         """
         self.cursor.execute("""
-            SELECT id, song_name, artist_name, album, yt_id, cover_url 
-            FROM tracks 
+            SELECT id, song_name, artist_name, album, yt_id, cover_url
+            FROM tracks
             WHERE status = 'found'
         """)
         return self.cursor.fetchall()

@@ -5,8 +5,10 @@ Focuses on finding the best match (Official Song or High Quality Video) based on
 title and artist queries.
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Any
+
 from ytmusicapi import YTMusic
+
 
 class MusicFinder:
     """Handles interaction with the YouTube Music API."""
@@ -15,7 +17,7 @@ class MusicFinder:
         """Initializes the MusicFinder with YTMusic."""
         self.yt = YTMusic()
 
-    def find_best_match(self, query: str) -> Optional[Dict[str, Any]]:
+    def find_best_match(self, query: str) -> dict[str, Any] | None:
         """Searches YouTube Music and finds the best match.
 
         Checks both official songs and videos to also find remixes and unofficial covers.
@@ -27,7 +29,7 @@ class MusicFinder:
             Optional[Dict[str, Any]]: A dictionary of metadata if found, otherwise None.
         """
         try:
-            results: List[Dict[str, Any]] = self.yt.search(query)
+            results: list[dict[str, Any]] = self.yt.search(query)
         except Exception as e:
             print(f"Error searching for '{query}': {e}")
             return None
@@ -37,7 +39,10 @@ class MusicFinder:
 
         for item in results:
             if item.get('resultType') in ['song', 'video']:
-                
+                video_id = item.get('videoId')
+                if not video_id:
+                    continue
+
                 artists = []
                 if 'artists' in item and isinstance(item['artists'], list):
                     artists = [a.get('name', '') for a in item['artists'] if 'name' in a]
@@ -52,7 +57,7 @@ class MusicFinder:
                     cover = item['thumbnails'][-1].get('url', '')
 
                 return {
-                    'yt_id': item.get('videoId', ''),
+                    'yt_id': video_id,
                     'title': item.get('title', ''),
                     'artist': artist_text,
                     'album': album,
@@ -60,7 +65,7 @@ class MusicFinder:
                     'duration': item.get('duration', ''),
                     'type': item.get('resultType', '')
                 }
-        
+
         return None
 
 if __name__ == "__main__":
@@ -68,7 +73,7 @@ if __name__ == "__main__":
     print("Testing search...")
     test_query = "man delam nemikhast shayea"
     result = finder.find_best_match(test_query)
-    
+
     if result:
         print("Found:")
         print(f"Title: {result['title']}")

@@ -9,13 +9,14 @@ Handles the retrieval of audio streams and file post-processing.
 Note: Includes error handling for common stream extraction failures.
 """
 
-from mutagen.easyid3 import EasyID3
-from mutagen.id3 import ID3, APIC
 import os
-import requests
 import subprocess
+
+import requests
 import yt_dlp
-from typing import Optional
+from mutagen.easyid3 import EasyID3
+from mutagen.id3 import APIC, ID3
+
 
 class Downloader:
     """Manages audio downloading and tagging."""
@@ -47,21 +48,21 @@ class Downloader:
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(f'https://www.youtube.com/watch?v={yt_id}', download=False)
-                
+
                 if info and 'formats' in info:
                     audio_formats = [f for f in info['formats'] if f.get('vcodec') == 'none' and f.get('acodec') != 'none']
-                    
+
                     if audio_formats:
                         best_audio = audio_formats[-1]
                         return best_audio.get('filesize') or best_audio.get('filesize_approx') or 0
-                
+
                 if info:
                     return info.get('filesize') or info.get('filesize_approx') or 0
                 return 0
         except Exception:
             return 0
 
-    def download_audio(self, yt_id: str, filename: str) -> Optional[str]:
+    def download_audio(self, yt_id: str, filename: str) -> str | None:
         """Downloads audio using yt-dlp to get stream URL and ffmpeg to convert.
 
         Args:
@@ -81,7 +82,7 @@ class Downloader:
         try:
             process = subprocess.run(cmd_get_url, capture_output=True, text=True, check=True, encoding='utf-8')
             stream_url = process.stdout.strip()
-            
+
             if not stream_url:
                 print("Error: Could not retrieve stream URL (empty output).")
                 return None
@@ -89,23 +90,23 @@ class Downloader:
             print("Stream URL found. Starting download with FFmpeg...")
 
             cmd_ffmpeg = [
-                "ffmpeg", 
-                "-y", 
+                "ffmpeg",
+                "-y",
                 "-i", stream_url,
-                "-vn", 
-                "-ar", "44100", 
-                "-ac", "2", 
-                "-b:a", "192k", 
-                "-f", "mp3", 
+                "-vn",
+                "-ar", "44100",
+                "-ac", "2",
+                "-b:a", "192k",
+                "-f", "mp3",
                 final_mp3_path
             ]
-            
+
             ffmpeg_process = subprocess.run(cmd_ffmpeg, capture_output=True, text=True)
-            
+
             if ffmpeg_process.returncode != 0:
                 print(f"FFmpeg Error: {ffmpeg_process.stderr}")
                 return None
-            
+
             if os.path.exists(final_mp3_path) and os.path.getsize(final_mp3_path) > 10240:
                 return final_mp3_path
             else:
@@ -137,10 +138,10 @@ class Downloader:
         try:
             try:
                 audio = EasyID3(filepath)
-            except:
+            except Exception:
                 audio = EasyID3()
                 audio.save(filepath)
-            
+
             audio['title'] = title
             audio['artist'] = artist
             audio['album'] = album
@@ -149,18 +150,18 @@ class Downloader:
             if cover_url:
                 response = requests.get(cover_url, timeout=10)
                 if response.status_code == 200:
-                    mime_type = response.headers.get('Content-Type', 'image/jpeg') 
-                    
+                    mime_type = response.headers.get('Content-Type', 'image/jpeg')
+
                     audio_id3 = ID3(filepath)
                     audio_id3.add(APIC(
-                        encoding=3, 
-                        mime=mime_type, 
-                        type=3, 
-                        desc=u'Cover',
+                        encoding=3,
+                        mime=mime_type,
+                        type=3,
+                        desc='Cover',
                         data=response.content
                     ))
                     audio_id3.save()
-            
+
             print(f"Metadata added to {filepath}")
             return True
 

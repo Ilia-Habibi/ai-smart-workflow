@@ -9,20 +9,22 @@ This script coordinates the entire pipeline:
 5. Downloads the highest quality audio available using the Downloader module.
 """
 
+import os
+import time
+
 from database import DatabaseHandler
 from downloader import Downloader
 from music_api import MusicFinder
 from ocr_handler import OCRHandler
-import os
-import time
+
 
 def main() -> None:
     """Main execution function for the PlaylistPirate pipeline."""
-    images_dir = "input_images" 
-    
+    images_dir = "input_images"
+
     db = DatabaseHandler()
-    ocr = OCRHandler() 
-    finder = MusicFinder() 
+    ocr = OCRHandler()
+    finder = MusicFinder()
     downloader = Downloader()
 
     if not os.path.exists(images_dir):
@@ -45,23 +47,23 @@ def main() -> None:
 
         try:
             grouped_lines, raw_text_full = ocr.extract_clean_tracks(full_path)
-            
+
             db.add_image_log(image_file, raw_text_full)
-            
+
             print(f"Found {len(grouped_lines)} potential tracks.")
 
             for line in grouped_lines:
                 clean_line = line.strip()
-                if len(clean_line) > 3: 
+                if len(clean_line) > 3:
                     db.add_raw_track(clean_line)
-                    
+
         except Exception as e:
             print(f"Error processing {image_file}: {e}")
 
     print("\n--- Starting Music Search ---")
-    
+
     pending_tracks = db.get_pending_tracks()
-    
+
     if not pending_tracks:
         print("No pending tracks to search.")
     else:
@@ -69,19 +71,19 @@ def main() -> None:
 
     for track_id, raw_text in pending_tracks:
         print(f"Searching for: {raw_text} ...")
-        
+
         result = finder.find_best_match(raw_text)
-        
+
         if result:
             saved = db.update_track_info(track_id, result)
             if saved:
                 print(f" -> MATCH: {result['title']} by {result['artist']}")
             else:
-                print(f" -> DUPLICATE: Removed.")
+                print(" -> DUPLICATE: Removed.")
         else:
             print(" -> NOT FOUND")
             db.mark_track_not_found(track_id)
-        
+
         time.sleep(1)
 
     print("\n--- Starting Downloads ---")
@@ -98,7 +100,7 @@ def main() -> None:
 
         file_size = downloader.get_file_info(yt_id)
         size_mb = file_size / (1024 * 1024) if file_size else 0
-        
+
         if size_mb > 30:
             user_input = input(f"Warning: File size is large ({size_mb:.2f} MB). Download? (y/n): ")
             if user_input.lower() != 'y':
@@ -106,7 +108,7 @@ def main() -> None:
                 continue
 
         safe_filename = f"{artist_name} - {song_name}".replace("/", "-").replace("\\", "-").replace(":", "-").replace("?", "").replace("*", "").replace("\"", "").replace("<", "").replace(">", "").replace("|", "")
-        
+
         file_path = downloader.download_audio(yt_id, safe_filename)
 
         if file_path:

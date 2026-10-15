@@ -26,6 +26,33 @@ You do NOT need the user to specify exact commands. You figure out what's needed
 
 ---
 
+## Configuration & Override Protocol
+
+The workflow supports customizable execution parameters via YAML configuration files. The orchestrator must resolve configuration using this strict 3-tier precedence hierarchy:
+
+```
+[1. User Prompt Overrides]  --> Highest priority (e.g. "aim for 85% coverage")
+          ↓
+[2. Project Config File]    --> `.workflow-config.yaml` or `configs/workflow_config.yaml`
+          ↓
+[3. Built-in Skill Defaults] --> Fallback parameters defined in skill instructions
+```
+
+1. **Tier 1: Explicit User Prompt (Highest Priority):**
+   - Any specific directive provided in the user prompt (e.g., "test with 80% coverage", "don't run bandit", "focus only on database.py") immediately overrides any file settings.
+2. **Tier 2: Project Configuration File:**
+   - Check the project root for `.workflow-config.yaml` or `configs/workflow_config.yaml`.
+   - Read settings such as `validation.linter`, `validation.auto_fix`, `testing.min_coverage`, and `testing.mock_strategy` and pass them to sub-agents.
+3. **Tier 3: Built-in Defaults (Fallback):**
+   - If no config file is detected and no prompt overrides are given, default to:
+     - `linter`: Ruff with auto-fix enabled
+     - `type_checker`: MyPy
+     - `min_coverage`: 70%
+     - `mock_strategy`: strict unit test isolation (all external I/O and services mocked)
+     - `docstring_style`: Google style
+
+---
+
 ## Intent Detection Protocol
 
 When you receive a user prompt, classify it into one of these **workflow modes**:
@@ -220,16 +247,18 @@ When invoking a sub-agent, provide:
 
 ---
 
-## Quality Gates
+## Quality Gates & Verification Protocol
 
-Before marking the workflow as complete, verify:
+Before declaring the workflow as complete, the orchestrator MUST execute verification commands and verify:
 
-- [ ] All lint errors are resolved (or documented as intentional)
-- [ ] All tests pass
-- [ ] Test coverage meets minimum threshold (aim for 70%+)
-- [ ] All public functions have docstrings
-- [ ] README is accurate and up-to-date
-- [ ] No high-severity security issues
+- [ ] **Linter Quality Gate:** `ruff check .` exits with code 0 (`All checks passed!`).
+- [ ] **Type Check Quality Gate:** `mypy .` exits with code 0 (`Success: no issues found`).
+- [ ] **Test Quality Gate:** `pytest` exits with code 0 (100% of tests pass, 0 failures).
+- [ ] **Test Isolation Gate:** All unit tests run in isolation with all external network, DB, and subprocess calls mocked.
+- [ ] **Coverage Gate:** Test coverage meets or exceeds configured threshold (default 70%+).
+- [ ] **Documentation Alignment Gate:** All claims made in README and reports are backed by verified, reproducible execution output.
+- [ ] All public functions have valid docstrings.
+- [ ] No unresolved high-severity security issues.
 
 ---
 

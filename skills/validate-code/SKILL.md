@@ -27,25 +27,30 @@ To systematically enforce code quality, type safety, and basic security best pra
 ## Instructions
 1. **Tool Setup & Configuration:**
    - Verify if `ruff`, `mypy`, and `bandit` are installed. If not, install them in the current environment.
-   - Copy the default `ruff.toml` and `mypy.ini` from the skill's `resources` directory to the target project root if they do not already possess their own configurations.
+   - Respect project-specific configurations in `pyproject.toml` or `ruff.toml`/`mypy.ini`.
+   - If third-party libraries lack typing stubs (reporting `[import-untyped]`), ensure module overrides (`ignore_missing_imports = true`) are configured in `pyproject.toml` or `mypy.ini`.
+   - Copy the default `ruff.toml` and `mypy.ini` from the skill's `resources` directory to the target project root only if the project lacks its own configuration.
 2. **Execution Phase:**
    - Run Ruff: `ruff check .` (note the errors).
-   - Run MyPy: `mypy .` (note the type errors).
+   - Run MyPy: `mypy .` (or with `--config-file` if applicable; note type errors).
    - Run Bandit: `bandit -r . -c pyproject.toml` or standalone (note high/medium severity issues).
 3. **Decision Tree for Remediation:**
    - **Auto-Fixable Issues (Proceed directly):**
      - Unused imports (Ruff: `F401`).
-     - Formatting issues (Ruff format).
-     - Adding simple missing type hints (e.g., `def func(x: int) -> None:`).
+     - Formatting & whitespace issues (Ruff: `W291`, `W293`).
+     - Import sorting (Ruff: `I001`).
+     - Simple comparisons (Ruff: `E712`).
+     - Adding missing type hints on public interfaces.
    - **Requires Human Review (Flag in report):**
      - Complex architectural refactoring.
      - Resolving `Any` types that require deep domain knowledge.
-     - Security vulnerabilities (Bandit alerts) modifying core logic.
-4. **Action Phase:**
-   - Run `ruff check . --fix` to auto-resolve basic issues.
-   - Manually edit files to add obvious type hints to untyped functions.
+     - Security vulnerabilities (Bandit alerts) modifying core business logic.
+4. **Action & Verification Loop (MANDATORY):**
+   - Step 4.1: Run `ruff check . --fix` (and `--unsafe-fixes` if appropriate).
+   - Step 4.2: Manually edit files to resolve bare `except` blocks, typing casts, or remaining linter errors.
+   - Step 4.3: **Loop Verification**: Re-run `ruff check .` and `mypy .` to verify that both tools exit with code 0. Do NOT conclude the phase until clean zero-error outputs are achieved.
 5. **Reporting Phase:**
-   - Produce a Markdown `validation_report.md` summarizing the issues found, the issues auto-fixed, and the manual interventions required.
+   - Produce a Markdown `validation_report.md` summarizing the issues found, the issues auto-fixed, and the verified final results.
 
 ## Output
 - Modified code files (cleaner, typed, linted).
@@ -53,6 +58,10 @@ To systematically enforce code quality, type safety, and basic security best pra
 
 ## Quality Checklist
 - [ ] All three tools (Ruff, MyPy, Bandit) were executed.
+- [ ] Ruff check exits with 0 (`All checks passed!`).
+- [ ] MyPy check exits with 0 (`Success: no issues found`).
+- [ ] Auto-fixes were applied safely without breaking existing business logic.
+- [ ] Third-party libraries without stubs are appropriately handled via configuration overrides.
 - [ ] Auto-fixes were applied safely without breaking existing business logic.
 - [ ] Type hints added are accurate and do not misuse `Any` excessively.
 - [ ] The validation report clearly delineates fixed vs. outstanding issues.
