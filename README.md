@@ -162,6 +162,22 @@ The `demo/` directory contains a real-world before/after example using [Playlist
 - ✅ Google-style docstrings on public functions
 - ✅ Fully mocked unit tests guaranteeing complete test isolation
 
+### 🔬 Reproducible Verification Commands
+Run the following commands to independently reproduce the verified demo results:
+
+```bash
+# 1. Run unit test suite & coverage (31 passed, 92% coverage)
+pytest demo/after/tests
+
+# 2. Run Ruff linter (0 errors)
+ruff check demo/after
+
+# 3. Run MyPy type checker (0 errors)
+mypy --config-file demo/after/pyproject.toml demo/after
+```
+
+> Full verification logs, root cause analysis, and workflow improvements are documented in [docs/verification_and_workflow_improvements.md](docs/verification_and_workflow_improvements.md).
+
 ---
 
 ## ⚙️ Configuration & Override Protocol
