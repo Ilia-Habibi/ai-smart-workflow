@@ -40,3 +40,6 @@ Thumbs.db
 
 # Database
 *.db
+
+# test images
+demo/after/input_images/*
